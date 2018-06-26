@@ -13,6 +13,18 @@ module SimpleAbs
     end
   end
 
+  def increment(experiment, which, field)
+    condition = ["experiment = '%s' AND which = '%s'", experiment, which]
+    sanitized_condition = SimpleAbs::Alternative.send(:sanitize_sql_for_conditions, condition)
+
+    query = <<-SQL.squish
+      UPDATE alternatives SET #{field} = #{field} + 1
+      WHERE #{sanitized_condition}
+    SQL
+
+    ActiveRecord::Base.connection.exec_query query
+  end
+
   def ab_test(name, tests)
     alternatives = tests.map { |t| t.is_a?(Hash) ? t : { t => 1 } }
 
@@ -25,7 +37,8 @@ module SimpleAbs
       test_value = choose_alternative(alternatives)
       cookies.permanent[name] = test_value
 
-      find_or_create_by_experiment_and_which_method(name, test_value).increment!(:participants)
+      alternative = find_or_create_by_experiment_and_which_method(name, test_value)
+      increment(name, test_value, :participants)
     end
 
     return test_value
@@ -34,7 +47,8 @@ module SimpleAbs
   def participate_in_test(name, test_value)
     return if is_bot? || cookies[name].present?
     cookies.permanent[name] = test_value
-    find_or_create_by_experiment_and_which_method(name, test_value).increment!(:participants)
+    find_or_create_by_experiment_and_which_method(name, test_value)
+    increment(name, test_value, :participants)
   end
 
   def choose_alternative(tests)
@@ -53,7 +67,8 @@ module SimpleAbs
     if !is_bot?
       test_value = cookies[name]
       if test_value && cookies[name.to_s + "_converted"].blank?
-        find_or_create_by_experiment_and_which_method(name, test_value).increment!(:conversions)
+        alternative = find_or_create_by_experiment_and_which_method(name, test_value)
+        increment(name, test_value, :conversions)
         cookies.permanent[name.to_s + "_converted"] = true
       end
     end
