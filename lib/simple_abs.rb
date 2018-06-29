@@ -5,7 +5,7 @@ module SimpleAbs
   def is_bot?
     agent = request.env["HTTP_USER_AGENT"]
     matches = nil
-    matches = agent.match(/(facebook|postrank|voyager|twitterbot|googlebot|slurp|butterfly|pycurl|tweetmemebot|metauri|evrinid|reddit|digg)/mi) if agent
+    matches = agent.match(/(facebook|postrank|voyager|twitterbot|googlebot|slurp|butterfly|pycurl|tweetmemebot|metauri|evrinid|reddit|digg|yandexbot|stackrambler|mail.ru|pinterest|curl|bingbot|baidu|duckduckgo|proximic|sogou|360spider)/mi) if agent
     if (agent.nil? or matches)
       return true
     else
